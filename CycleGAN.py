@@ -4,89 +4,10 @@
 # In[1]:
 
 
-import scipy
-import imageio
-from skimage.transform import resize
-from glob import glob
-import numpy as np
+from dataloader import DataLoader
 
 
 # In[2]:
-
-
-class DataLoader():
-    def __init__(self, dataset_name, img_res=(128, 128)):
-        self.dataset_name = dataset_name
-        self.img_res = img_res
-        
-        
-    def load_data(self, domain, batch_size=1, is_testing=False):
-        data_type = "train%s" % domain if not is_testing else "test%s" % domain
-        path = glob('./datasets/%s/%s/*' % (self.dataset_name, data_type))
-        
-        batch_images = np.random.choice(path, size=batch_size)
-        
-        imgs = []
-        for img_path in batch_images:
-            img = self.imread(img_path)
-            if not is_testing:
-                img = resize(img, self.img_res)
-                
-                if np.random.random() > 0.5:
-                    img = np.fliplr(img)
-            
-            else:
-                img = resize(img, self.img_res)
-            imgs.append(img)
-        
-        imgs = np.array(imgs) / 127.5 - 1.
-        
-        return imgs
-    
-    
-    def load_batch(self, batch_size=1, is_testing=False):
-        data_type = "train" if not is_testing else "val"
-        path_A = glob('./datasets/%s/%sA/*' % (self.dataset_name, data_type))
-        path_B = glob('./datasets/%s/%sB/*' % (self.dataset_name, data_type))
-        
-        self.n_batches = int(min(len(path_A), len(path_B)) / batch_size)
-        total_samples = self.n_batches * batch_size
-        
-        # Sample n_batches* batch_size from each path list so that model sees all
-        
-        # samples from both domains
-        path_A = np.random.choice(path_A, total_samples, replace=False)
-        path_B = np.random.choice(path_B, total_samples, replace=False)
-        
-        for i in range(self.n_batches-1):
-            batch_A = path_A[i * batch_size:(i+1)*batch_size]
-            batch_B = path_B[i * batch_size:(i+1)*batch_size]
-            imgs_A, imgs_B = [], []
-            for img_A, img_B in zip(batch_A, batch_B):
-                img_A = self.imread(img_A)
-                img_B = self.imread(img_B)
-                
-                img_A = resize(img_A, self.img_res)
-                img_B = resize(img_B, self.img_res)
-                
-                if not is_testing and np.random.random() > 0.5:
-                    img_A = np.fliplr(img_A)
-                    img_B = np.fliplr(img_B)
-                    
-                imgs_A.append(img_A)
-                imgs_B.append(img_B)
-                
-            imgs_A = np.array(imgs_A) / 127.5 - 1
-            imgs_B = np.array(imgs_B) / 127.5 - 1
-            
-            yield imgs_A, imgs_B
-            
-            
-    def imread(self, path):
-        return imageio.imread(path, pilmode="RGB").astype(np.float)
-
-
-# In[3]:
 
 
 # 코드 9-1 패키지 임포트
@@ -107,7 +28,7 @@ import numpy as np
 import os
 
 
-# In[4]:
+# In[3]:
 
 
 class CycleGAN():
@@ -119,7 +40,7 @@ class CycleGAN():
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
 
         # 데이터 로더 설정
-        self.dataset_name = 'apple2orange'
+        self.dataset_name = 'vangogh2photo'
         # DataLoader 객체를 사용해 전처리된 데이터 임포트합니다.
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.img_rows, self.img_cols))
@@ -191,10 +112,6 @@ class CycleGAN():
                                             self.lambda_id, self.lambda_id],
                               optimizer=optimizer)
 
-
-# In[5]:
-
-
 class CycleGAN(CycleGAN):
     @staticmethod
     def conv2d(layer_input, filters, f_size=4, normalization=True):
@@ -220,7 +137,7 @@ class CycleGAN(CycleGAN):
         return u
 
 
-# In[6]:
+# In[4]:
 
 
 class CycleGAN(CycleGAN):
@@ -247,7 +164,7 @@ class CycleGAN(CycleGAN):
         return Model(d0, output_img)
 
 
-# In[7]:
+# In[5]:
 
 
 class CycleGAN(CycleGAN):
@@ -264,7 +181,7 @@ class CycleGAN(CycleGAN):
         return Model(img, validity)
 
 
-# In[8]:
+# In[6]:
 
 
 class CycleGAN(CycleGAN):
@@ -299,7 +216,7 @@ class CycleGAN(CycleGAN):
         plt.show()
 
 
-# In[9]:
+# In[7]:
 
 
 class CycleGAN(CycleGAN):
@@ -338,9 +255,9 @@ class CycleGAN(CycleGAN):
                     self.sample_images(epoch, batch_i)
 
 
-# In[ ]:
+# In[8]:
 
 
 cycle_gan = CycleGAN()
-cycle_gan.train(epochs=100, batch_size=64, sample_interval=10)
+cycle_gan.train(epochs=150, batch_size=64, sample_interval=10)
 
